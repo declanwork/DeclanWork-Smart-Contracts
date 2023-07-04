@@ -16,13 +16,13 @@ pub contract DeclanWork {
 
   // Freelancers struct
   pub struct Freelancer {
-    pub var name: String
-    pub var address: Address
-    pub var portfolioURL: String
-    pub var skills: [String]
-    pub var categories: [String]
-    pub var verified: Bool
-    pub var stars: [String]
+    pub(set) var name: String
+    pub(set) var address: Address
+    pub(set) var portfolioURL: String
+    pub(set) var skills: [String]
+    pub(set) var categories: [String]
+    pub(set) var verified: Bool
+    pub(set) var stars: [String]
 
     init(name: String, address: Address, portfolioURL: String, skills: [String], categories: [String], verified: Bool, stars: [String]) {
       self.name = name
@@ -37,10 +37,10 @@ pub contract DeclanWork {
 
 
   pub struct GigOwner {
-    pub var gigOwner: String
-    pub var gigOwnerAddress: Address
-    pub var isVerified: Bool
-    pub var stars: [String]
+    pub(set) var gigOwner: String
+    pub(set) var gigOwnerAddress: Address
+    pub(set) var isVerified: Bool
+    pub(set) var stars: [String]
 
     init(gigOwner: String, gigOwnerAddress: Address, isVerified: Bool, stars: [String]) {
       self.gigOwner = gigOwner
@@ -52,18 +52,18 @@ pub contract DeclanWork {
   }
 
   pub struct Gig {
-    pub var id: UInt64
-    pub var owner: Address
-    pub var title: String
-    pub var description: String
-    pub var gigTimeline: String
-    pub var deadline: Int16
-    pub var budget: UFix64
-    pub var featureGig: Bool
-    pub var freelancer: Freelancer?
-    pub var status: String?
-    pub var completed: Bool
-    pub var escrow: UFix64
+    pub(set) var id: UInt64
+    pub(set) var owner: Address
+    pub(set) var title: String
+    pub(set) var description: String
+    pub(set) var gigTimeline: String
+    pub(set) var deadline: Int16
+    pub(set) var budget: UFix64
+    pub(set) var featureGig: Bool
+    pub(set) var freelancer: Freelancer?
+    pub(set) var status: String?
+    pub(set) var completed: Bool
+    pub(set) var escrow: UFix64
 
     init(id: UInt64, owner: Address, title: String, description: String, gigTimeline: String, deadline: Int16, budget: UFix64, featureGig: Bool, freelancer: Freelancer?, status: String?, completed: Bool, escrow: UFix64) {
       self.id = id
@@ -162,6 +162,9 @@ pub contract DeclanWork {
     self.gigs[newGigId] = gig
 
     emit GigCreated(gigId: newGigId)
+    
+    // To generate update noOfCreatedGigs counter
+    self.noOfCreatedGigs = self.noOfCreatedGigs + 1
 
     return newGigId
   }
@@ -182,6 +185,8 @@ pub contract DeclanWork {
 
     // Store the bid information or execute bid logic
     // Add your custom bid logic here
+    
+    gig.freelancer = self.account.address
 
     emit BidPlaced(gigId: gigId, bidder: self.account.address)
   }
@@ -202,7 +207,6 @@ pub contract DeclanWork {
     gig.status = "completed"
     gig.completed = true
 
-    gig.freelancer = self.account.address
   }
 
   pub fun confirmGig(gigId: UInt64) {
@@ -215,28 +219,18 @@ pub contract DeclanWork {
 
   // Verify Freelancer
   pub fun verifyFreelancer(freelancerAddress: Address) {
-    let freelancer = self.freelancers[freelancerAddress]
-    if (freelancer.verified) {
-      return
+    if let freelancer = self.freelancers[freelancerAddress] {
+      if !freelancer.verified {
+        freelancer.verified = true
+      }
     }
     
-    // if (freelancer.stars >= 5) {
-    //   freelancer.verified = True
-    // }
+  // if (freelancer.stars >= 5) {
+  //   freelancer.verified = True
+  // }
 
-    freelancer.verified = true
 }
 
-  // Internal helper function to retrieve a gig by ID
-  // pub fun getGig(gigId: UInt64): Gig {
-  // let gig = self.gigs[gigId]
-   // if let gig = gig as? Gig {
-   //     return gig
-   // } else {
-   //     return panic("Gig not found")
-   // }
-   // return self.gigs[gigId] ?? panic("Gig not found")
-  // }
 
   pub fun getGig(gigId: UInt64): Gig {
     let gig = self.gigs[gigId] ?? panic("Gig not found")
@@ -245,10 +239,10 @@ pub contract DeclanWork {
 
   // Internal helper function to generate a unique gig ID
   pub fun getCurrentGigId(): UInt64 {
-      return noOfCreatedGigs
-
+  
     // Generate and return a unique gig ID based on the current state
-    // Add your custom logic to generate a unique gig ID
+      return self.noOfCreatedGigs
+
   }
 
   // Internal helper function to lock Gig payment
