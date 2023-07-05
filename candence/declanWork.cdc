@@ -61,6 +61,7 @@ pub contract DeclanWork {
     pub(set) var budget: UFix64
     pub(set) var featureGig: Bool
     pub(set) var freelancer: Freelancer?
+    pub(set) var bidders: {Address: Bidder?} 
     pub(set) var status: String?
     pub(set) var completed: Bool
     pub(set) var escrow: UFix64
@@ -74,12 +75,28 @@ pub contract DeclanWork {
       self.budget = budget
       self.featureGig = featureGig
       self.freelancer = freelancer
+      self.bidders = {}
       self.status = status
       self.deadline = deadline
       self.completed = completed
       self.escrow = escrow
     }
 
+  }
+
+  // bidder struct
+  pub struct Bidder {
+  pub var freelancerName: String
+  pub var freelancerSkills: [String]
+  pub var freelancerPortfolioURL: String
+  pub var bidAmount: UFix64
+
+  init(freelancerName: String, freelancerSkills: [String], freelancerPortfolioURL: String, bidAmount: UFix64) {
+    self.freelancerName = freelancerName
+    self.freelancerSkills = freelancerSkills
+    self.freelancerPortfolioURL = freelancerPortfolioURL
+    self.bidAmount = bidAmount
+    }
   }
 
 
@@ -143,7 +160,7 @@ pub contract DeclanWork {
   }
 
   // Function to create a new gig
-  pub fun createGig(title: String, description: String, budget: UFix64, deadline: Date, gigTimeline: String, featureGig: Bool, freelancer: Freelancer?, status: String, completed: Bool, escrow: UFix64): UInt64 {
+  pub fun createGig(title: String, description: String, budget: UFix64, deadline: Int16, gigTimeline: String, featureGig: Bool, freelancer: Freelancer?, status: String, completed: Bool, escrow: UFix64): UInt64 {
     let newGigId = self.getCurrentGigId()
     let gig = Gig(
       id: newGigId,
@@ -170,25 +187,35 @@ pub contract DeclanWork {
   }
 
   // Function to place a bid on a gig
-  pub fun placeBid(gigId: UInt64, amount: UFix64) {
+  pub fun placeBid(gigId: UInt64, bidAmount: UFix64) {
     let gig = self.getGig(gigId: gigId)
 
     // Perform validation checks
     if (gig.status != "open") {
       panic("Gig is not open")
     }
-    if (amount > gig.budget) {
+    if (bidAmount > gig.budget) {
       panic("Bid amount must be less than or equal to gig budget")
     }
 
+    // Retrieve the bidder's information from the freelancers dictionary
+    let bidderAddress = self.account.address
+    let freelancer = self.freelancers[bidderAddress]
+    if freelancer == nil {
+      panic("Freelancer not found")
+    }
 
+    // Store the bid information
+    let bidder = Bidder(
+      freelancerName: freelancer!.name,
+      freelancerSkills: freelancer!.skills,
+      freelancerPortfolioURL: freelancer!.portfolioURL,
+      bidAmount: bidAmount
+    )
+    gig.bidders[bidderAddress] = bidder
+    gig.status = "bid_placed"
 
-    // Store the bid information or execute bid logic
-    // Add your custom bid logic here
-    
-    gig.freelancer = self.account.address
-
-    emit BidPlaced(gigId: gigId, bidder: self.account.address)
+    emit BidPlaced(gigId: gigId, bidder: bidderAddress)
   }
 
   // Function to confirm gig completion
@@ -214,7 +241,7 @@ pub contract DeclanWork {
     if (gig.status != "completed") {
       panic("Gig is not completed")
     }
-    gig.escrow = UFix64(0)
+    gig.escrow = 0.0
   }
 
   // Verify Freelancer
