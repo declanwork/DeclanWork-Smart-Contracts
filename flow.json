@@ -6,9 +6,17 @@
 		"testnet": "access.devnet.nodes.onflow.org:9000"
 	},
 	"accounts": {
-		"emulator-account": {
-			"address": "f8d6e0586b0a20c7",
-			"key": "9913d3b48eae7934062e427dffe90588608253bae2dcdb8e8759c8d42296e681"
+		"testnet-account": {
+			"address": "0xf88f3b6f4c595384",
+			"key": "5647bf23fb794cfdf22f4a2fa93f0bb6f1da9a4412126fc56483487a159049a1"
 		}
-	}
+	},
+	"contracts": {
+    "Declan": "./cadence/Declan.cdc"
+  },
+  "deployments": {
+    "testnet": {
+      "testnet-account": ["Declan"]
+    }
+  }
 }
